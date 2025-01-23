@@ -51,6 +51,13 @@ public static class StringExtensions
         return str.Replace(" ", "").Replace("\t", "").Replace("\n", "").Replace("\r", "");
     }
 
+    public static string ClearNonAssciStr(this string? str)
+    {
+        if (string.IsNullOrWhiteSpace(str)) return string.Empty;
+
+        return Regex.Replace(str, @"[^\u0000-\u007F]", "");
+    }
+
     public static string JsonContent(this string text)
     {
         var m = Regex.Match(text, @"\{(?:[^{}]|(?<open>\{)|(?<-open>\}))+(?(open)(?!))\}");
