@@ -1,5 +1,4 @@
 using BotSharp.Abstraction.Plugins;
-using BotSharp.Abstraction.Settings;
 using BotSharp.Core.Realtime.Hooks;
 using BotSharp.Core.Realtime.Services;
 using Microsoft.Extensions.Configuration;
@@ -15,12 +14,6 @@ public class RealtimePlugin : IBotSharpPlugin
 
     public void RegisterDI(IServiceCollection services, IConfiguration config)
     {
-        services.AddScoped(provider =>
-        {
-            var settingService = provider.GetRequiredService<ISettingService>();
-            return settingService.Bind<RealtimeModelSettings>("RealtimeModel");
-        });
-
         services.AddScoped<IRealtimeHub, RealtimeHub>();
         services.AddScoped<IConversationHook, RealtimeConversationHook>();
     }

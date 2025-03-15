@@ -52,9 +52,6 @@ public class RealtimeSessionBody
 
 public class RealtimeSessionTurnDetection
 {
-    [JsonPropertyName("interrupt_response")]
-    public bool InterruptResponse { get; set; } = true;
-
     /// <summary>
     /// Milliseconds
     /// </summary>

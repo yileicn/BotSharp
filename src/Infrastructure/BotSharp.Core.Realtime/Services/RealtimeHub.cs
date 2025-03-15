@@ -98,18 +98,15 @@ public class RealtimeHub : IRealtimeHub
         await _completer.Connect(_conn, 
             onModelReady: async () => 
             {
-                // Not TriggerModelInference, waiting for user utter.
-                await _completer.UpdateSession(_conn);
-
-                // Push dialogs into model context
-                foreach (var message in dialogs)
+                if (states.ContainsState("init_audio_file"))
                 {
-                    await _completer.InsertConversationItem(message);
+                    await _completer.UpdateSession(_conn, turnDetection: true);
                 }
-
-                // Trigger model inference if there is no audio file in the conversation
-                if (!states.ContainsState("init_audio_file"))
+                else
                 {
+                    // Control initial session, prevent initial response interruption
+                    await _completer.UpdateSession(_conn, turnDetection: false);
+
                     if (dialogs.LastOrDefault()?.Role == AgentRole.Assistant)
                     {
                         await _completer.TriggerModelInference($"Rephase your last response:\r\n{dialogs.LastOrDefault()?.Content}");
@@ -118,6 +115,10 @@ public class RealtimeHub : IRealtimeHub
                     {
                         await _completer.TriggerModelInference("Reply based on the conversation context.");
                     }
+
+                    // Start turn detection
+                    await Task.Delay(1000 * 8);
+                    await _completer.UpdateSession(_conn, turnDetection: true);
                 }
             },
             onModelAudioDeltaReceived: async (audioDeltaData, itemId) =>

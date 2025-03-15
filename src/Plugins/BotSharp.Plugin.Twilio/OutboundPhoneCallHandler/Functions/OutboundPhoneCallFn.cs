@@ -66,15 +66,15 @@ public class OutboundPhoneCallFn : IFunctionCallback
         var recordingStatusUrl = $"{_twilioSetting.CallbackHost}/twilio/recording/status?conversation-id={newConversationId}";
 
         // Generate initial assistant audio
-        string initAudioFile = null;
+        string initAudioUrl = null;
         if (!string.IsNullOrEmpty(args.InitialMessage))
         {
             var completion = CompletionProvider.GetAudioCompletion(_services, "openai", "tts-1");
             var data = await completion.GenerateAudioFromTextAsync(args.InitialMessage);
-            initAudioFile = "intial.mp3";
-            fileStorage.SaveSpeechFile(newConversationId, initAudioFile, data);
+            initAudioUrl = "intial.mp3";
+            fileStorage.SaveSpeechFile(newConversationId, initAudioUrl, data);
 
-            statusUrl += $"&init-audio-file={initAudioFile}";
+            statusUrl += $"&init-audio-file={initAudioUrl}";
         }
 
         // Set up process URL streaming or synchronous
@@ -88,17 +88,13 @@ public class OutboundPhoneCallFn : IFunctionCallback
             await sessionManager.SetAssistantReplyAsync(newConversationId, 0, new AssistantMessage
             {
                 Content = args.InitialMessage,
-                SpeechFileName = initAudioFile
+                SpeechFileName = initAudioUrl
             });
 
             processUrl += "/voice/init-outbound-call";
         }
 
-        processUrl += $"?conversation-id={newConversationId}";
-        if (!string.IsNullOrEmpty(initAudioFile))
-        {
-            processUrl += $"&init-audio-file={initAudioFile}";
-        }
+        processUrl += $"?conversation-id={newConversationId}&init-audio-file={initAudioUrl}";
 
         // Make outbound call
         var call = await CallResource.CreateAsync(

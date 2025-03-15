@@ -290,7 +290,7 @@ public class RealTimeCompletionProvider : IRealTimeCompletion
         return session;
     }
 
-    public async Task<string> UpdateSession(RealtimeHubConnection conn, bool interruptResponse = true)
+    public async Task<string> UpdateSession(RealtimeHubConnection conn, bool turnDetection = true)
     {
         var convService = _services.GetRequiredService<IConversationService>();
         var conv = await convService.GetConversation(conn.ConversationId);
@@ -317,8 +317,6 @@ public class RealTimeCompletionProvider : IRealTimeCompletion
         var words = new List<string>();
         HookEmitter.Emit<IRealtimeHook>(_services, hook => words.AddRange(hook.OnModelTranscriptPrompt(agent)));
 
-        var realitmeModelSettings = _services.GetRequiredService<RealtimeModelSettings>();
-
         var sessionUpdate = new
         {
             type = "session.update",
@@ -337,17 +335,21 @@ public class RealTimeCompletionProvider : IRealTimeCompletion
                 ToolChoice = "auto",
                 Tools = functions,
                 Modalities = [ "text", "audio" ],
-                Temperature = Math.Max(options.Temperature ?? realitmeModelSettings.Temperature, 0.6f),
-                MaxResponseOutputTokens = realitmeModelSettings.MaxResponseOutputTokens,
+                Temperature = Math.Max(options.Temperature ?? 0f, 0.6f),
+                MaxResponseOutputTokens = 512,
                 TurnDetection = new RealtimeSessionTurnDetection
                 {
-                    InterruptResponse = interruptResponse,
-                    Threshold = realitmeModelSettings.TurnDetection.Threshold,
-                    PrefixPadding = realitmeModelSettings.TurnDetection.PrefixPadding,
-                    SilenceDuration = realitmeModelSettings.TurnDetection.SilenceDuration
+                    Threshold = 0.9f,
+                    PrefixPadding = 300,
+                    SilenceDuration = 800
                 }
             }
         };
+
+        if (!turnDetection)
+        {
+            sessionUpdate.session.TurnDetection = null;
+        }
 
         await HookEmitter.Emit<IContentGeneratingHook>(_services, async hook =>
         {
